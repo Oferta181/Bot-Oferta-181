@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Flow 181 — Ativar conexões</title>
+<style>
+:root{color-scheme:dark;--bg:#060b08;--card:#0d1711;--line:#203229;--text:#f4f8f5;--muted:#91a39a;--green:#55eda0;--red:#ff7483}
+*{box-sizing:border-box}body{margin:0;font-family:Inter,system-ui,sans-serif;background:radial-gradient(circle at 80% 0,#123021 0,transparent 30%),var(--bg);color:var(--text);min-height:100vh}
+.wrap{width:min(980px,94vw);margin:0 auto;padding:42px 0 70px}.brand{font-weight:900;letter-spacing:.08em;color:var(--green);font-size:13px}.hero h1{font-size:clamp(30px,5vw,52px);margin:10px 0 8px}.hero p{color:var(--muted);max-width:760px;line-height:1.6}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:24px}.card{background:linear-gradient(180deg,#0e1913,#09110d);border:1px solid var(--line);border-radius:20px;padding:20px}.card h2{margin:0 0 6px}.card p{color:var(--muted);font-size:13px;line-height:1.55}
+label{display:grid;gap:6px;font-size:12px;color:#cbd7d0;margin-top:11px}input,select{width:100%;background:#07100c;border:1px solid var(--line);border-radius:10px;padding:11px;color:var(--text);outline:none}
+input:focus,select:focus{border-color:#3fd795}.row{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}.btn{border:0;border-radius:10px;padding:10px 13px;font-weight:800;cursor:pointer}.primary{background:var(--green);color:#05110a}.ghost{background:#142219;color:var(--text);border:1px solid var(--line)}.danger{background:#2a1116;color:#ff9aa5;border:1px solid #51232b}
+.status{margin-top:13px;padding:12px;border-radius:11px;border:1px solid var(--line);background:#08100c;color:#bdcbc4;font-size:12px;line-height:1.5}.ok{border-color:#285b42;color:#9ff1c5}.err{border-color:#5c2830;color:#ffabb4}
+.login{max-width:420px;margin:60px auto 0}.hidden{display:none!important}code{word-break:break-all;color:#73e8bd}small{color:var(--muted)}@media(max-width:760px){.grid{grid-template-columns:1fr}.wrap{padding-top:24px}}
+</style></head><body><main class="wrap">
+<div class="hero"><div class="brand">FLOW 181 · CONFIGURAÇÃO SEGURA</div><h1>Ativar as conexões que faltam</h1><p>Entre com a mesma conta do Flow 181. As credenciais são enviadas direto para o backend e não ficam salvas nesta página.</p></div>
+<section id="loginCard" class="card login"><h2>Entrar</h2><p>Use o login do Flow 181.</p><label>E-mail<input id="email" type="email" autocomplete="username"></label><label>Senha<input id="password" type="password" autocomplete="current-password"></label><div class="row"><button id="loginBtn" class="btn primary">Entrar</button></div><div id="loginStatus" class="status hidden"></div></section>
+<section id="app" class="hidden"><div class="row" style="justify-content:space-between;align-items:center"><div><b id="who"></b><br><small>Depois de conectar, atualize flow181.vercel.app.</small></div><button id="logoutBtn" class="btn ghost">Sair</button></div>
+<div class="grid">
+<article class="card"><h2>Copy IA</h2><p>Ativa ganchos contextuais para ofertas e para o planejador social.</p>
+<label>OpenAI API key<input id="aiKey" type="password" autocomplete="new-password" placeholder="sk-..."></label>
+<label>Modelo<select id="aiModel"><option value="gpt-5.6-luna">GPT-5.6 Luna</option><option value="gpt-5.6-terra">GPT-5.6 Terra</option><option value="gpt-5.6-sol">GPT-5.6 Sol</option></select></label>
+<label>Estilo<input id="aiStyle" value="humor leve, inteligente e natural"></label>
+<div class="row"><button id="aiSave" class="btn primary">Testar e conectar</button><button id="aiTest" class="btn ghost">Testar atual</button><button id="aiOff" class="btn danger hidden">Desconectar</button></div><div id="aiStatus" class="status">Verificando…</div></article>
+<article class="card"><h2>WhatsApp Cloud</h2><p>Para mensagens diretas com opt-in e templates aprovados pela Meta. Seus grupos continuam usando o Bridge atual.</p>
+<label>Access Token<input id="waToken" type="password" autocomplete="new-password" placeholder="EAAG..."></label>
+<label>Phone Number ID<input id="waPhone" inputmode="numeric" placeholder="ID numérico"></label>
+<label>Graph API<input id="waVersion" value="v23.0"></label>
+<label>Webhook Verify Token<input id="waVerify" type="password" autocomplete="new-password" placeholder="uma frase secreta"></label>
+<label>App Secret<input id="waSecret" type="password" autocomplete="new-password" placeholder="App Secret da Meta"></label>
+<div class="row"><button id="waSave" class="btn primary">Testar e conectar</button><button id="waTest" class="btn ghost">Testar atual</button><button id="waOff" class="btn danger hidden">Desconectar</button></div><div id="waStatus" class="status">Verificando…</div><div id="webhook" class="status hidden"></div></article>
+</div></section></main>
+<script>
+const U="https://tmrbhpanbebhnkemsamh.supabase.co",K="sb_publishable_Rp27JwmwkX_NbPJwGrhAOQ_Ypy-s3nQ";
+let session=null;const $=s=>document.querySelector(s);
+function st(id,msg,type=""){const e=$(id);e.className="status "+type;e.innerHTML=msg;e.classList.remove("hidden")}
+function esc(v){const d=document.createElement("div");d.textContent=String(v??"");return d.innerHTML}
+async function login(email,password){
+ const r=await fetch(U+"/auth/v1/token?grant_type=password",{method:"POST",headers:{"content-type":"application/json","apikey":K},body:JSON.stringify({email,password})});
+ const d=await r.json().catch(()=>({})); if(!r.ok) throw new Error(d.error_description||d.msg||d.error||"Falha no login"); return d;
+}
+async function call(path,action,payload={}){
+ if(!session?.access_token) throw new Error("Faça login primeiro");
+ const r=await fetch(U+"/functions/v1/"+path,{method:"POST",headers:{"content-type":"application/json","authorization":"Bearer "+session.access_token,"apikey":K},body:JSON.stringify({action,...payload})});
+ const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.details||d.hint||d.error||("Erro "+r.status));return d
+}
+async function aiStatus(){try{const d=await call("flow-ai-api","status");$("#aiModel").value=d.model||"gpt-5.6-luna";$("#aiStyle").value=d.style||"humor leve, inteligente e natural";$("#aiOff").classList.toggle("hidden",!d.connected);st("#aiStatus",d.connected?"<b>Conectado ✓</b> · "+esc(d.model):"Pendente — cole sua API key.",d.connected?"ok":"")}catch(e){st("#aiStatus","Erro: "+esc(e.message),"err")}}
+async function waStatus(){try{const d=await call("flow-whatsapp-api","status");if(d.graph_version)$("#waVersion").value=d.graph_version;$("#waOff").classList.toggle("hidden",!d.connected);const who=[d.verified_name,d.display_phone_number].filter(Boolean).join(" · ");st("#waStatus",d.connected?"<b>Conectado ✓</b>"+(who?" · "+esc(who):"")+"<br>Envio: "+(d.send_configured?"pronto":"pendente")+" · Webhook: "+(d.webhook_configured?"pronto":"pendente"):"Pendente — informe as credenciais da Meta.",d.connected?"ok":"");if(d.webhook_url){$("#webhook").classList.remove("hidden");$("#webhook").innerHTML="<b>Callback URL:</b><br><code>"+esc(d.webhook_url)+"</code><br><small>Cadastre esta URL na Meta com o mesmo Verify Token usado aqui.</small>"}}catch(e){st("#waStatus","Erro: "+esc(e.message),"err")}}
+$("#loginBtn").onclick=async()=>{try{st("#loginStatus","Entrando…");session=await login($("#email").value.trim(),$("#password").value);$("#loginCard").classList.add("hidden");$("#app").classList.remove("hidden");$("#who").textContent=session.user?.email||"Conta Flow 181";await Promise.all([aiStatus(),waStatus()])}catch(e){st("#loginStatus","Login falhou: "+esc(e.message),"err")}};
+$("#logoutBtn").onclick=()=>{session=null;location.reload()};
+$("#aiSave").onclick=async()=>{try{st("#aiStatus","Testando chave…");const d=await call("flow-ai-api","configure",{api_key:$("#aiKey").value.trim(),model:$("#aiModel").value,style:$("#aiStyle").value.trim()});$("#aiKey").value="";st("#aiStatus","<b>Conectado ✓</b>"+(d.preview?"<br>Teste: “"+esc(d.preview)+"”":""),"ok");$("#aiOff").classList.remove("hidden")}catch(e){st("#aiStatus","Falhou: "+esc(e.message),"err")}};
+$("#aiTest").onclick=async()=>{try{st("#aiStatus","Testando…");const d=await call("flow-ai-api","test");st("#aiStatus","<b>Teste aprovado ✓</b><br>"+esc(d.hook||"Resposta válida."),"ok")}catch(e){st("#aiStatus","Falhou: "+esc(e.message),"err")}};
+$("#aiOff").onclick=async()=>{if(!confirm("Desconectar Copy IA?"))return;await call("flow-ai-api","disconnect");await aiStatus()};
+$("#waSave").onclick=async()=>{try{st("#waStatus","Validando com a Meta…");const d=await call("flow-whatsapp-api","configure",{access_token:$("#waToken").value.trim(),phone_number_id:$("#waPhone").value.trim(),graph_version:$("#waVersion").value.trim(),webhook_verify_token:$("#waVerify").value.trim(),app_secret:$("#waSecret").value.trim()});$("#waToken").value=$("#waVerify").value=$("#waSecret").value="";st("#waStatus","<b>Conectado ✓</b>"+(d.verified_name?" · "+esc(d.verified_name):"")+(d.display_phone_number?" · "+esc(d.display_phone_number):""),"ok");$("#waOff").classList.remove("hidden");await waStatus()}catch(e){st("#waStatus","Falhou: "+esc(e.message),"err")}};
+$("#waTest").onclick=async()=>{try{st("#waStatus","Testando…");await call("flow-whatsapp-api","test");st("#waStatus","<b>Teste aprovado ✓</b> Token e Phone Number ID responderam corretamente.","ok")}catch(e){st("#waStatus","Falhou: "+esc(e.message),"err")}};
+$("#waOff").onclick=async()=>{if(!confirm("Desconectar WhatsApp Cloud?"))return;await call("flow-whatsapp-api","disconnect");await waStatus()};
+</script></body></html>
